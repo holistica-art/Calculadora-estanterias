@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizador ALMA PLENA</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        select, input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        button { background: #2c3e50; color: white; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #34495e; }
+        .resultado { margin-top: 20px; padding: 15px; background: #e8f6ef; border-left: 5px solid #27ae60; }
+        h2 { color: #2c3e50; margin-top: 0; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🛠️ Optimizador de Placas</h2>
+    
+    <label>Material:</label>
+    <select id="material">
+        <option value="2440x1220">Fenólico (2.44 x 1.22m)</option>
+        <option value="2660x1830">Fibrofacil (2.66 x 1.83m)</option>
+        <option value="3000x1200">Pino (3.00 x 1.20m)</option>
+        <option value="3000x1200">Saligna (3.00 x 1.20m)</option>
+    </select>
+
+    <label>Piezas a cortar (Largo x Ancho en mm):</label>
+    <div id="lista-piezas">
+        <div style="display: flex; gap: 5px;">
+            <input type="number" placeholder="Cant" class="p-cant" style="width: 25%;">
+            <input type="number" placeholder="Largo mm" class="p-largo">
+            <input type="number" placeholder="Ancho mm" class="p-ancho">
+        </div>
+    </div>
+    
+    <button onclick="agregarFila()">+ Agregar otra medida</button>
+    <button onclick="calcular()" style="background: #e67e22;">CALCULAR PLACAS</button>
+
+    <div id="resultado" class="resultado" style="display:none;"></div>
+</div>
+
+<script>
+    const DISCO = 3; // mm de tu disco
+
+    function agregarFila() {
+        const div = document.createElement('div');
+        div.style.display = "flex";
+        div.style.gap = "5px";
+        div.innerHTML = `
+            <input type="number" placeholder="Cant" class="p-cant" style="width: 25%;">
+            <input type="number" placeholder="Largo mm" class="p-largo">
+            <input type="number" placeholder="Ancho mm" class="p-ancho">
+        `;
+        document.getElementById('lista-piezas').appendChild(div);
+    }
+
+    function calcular() {
+        const matData = document.getElementById('material').value.split('x');
+        const matL = parseInt(matData[0]);
+        const matA = parseInt(matData[1]);
+        const areaPlaca = matL * matA;
+
+        let areaTotalPiezas = 0;
+        const cants = document.getElementsByClassName('p-cant');
+        const largos = document.getElementsByClassName('p-largo');
+        const anchos = document.getElementsByClassName('p-ancho');
+
+        for (let i = 0; i < cants.length; i++) {
+            if (cants[i].value && largos[i].value && anchos[i].value) {
+                // Sumamos el disco (3mm) a cada pieza para el cálculo real
+                let l = parseFloat(largos[i].value) + DISCO;
+                let a = parseFloat(anchos[i].value) + DISCO;
+                areaTotalPiezas += parseInt(cants[i].value) * l * a;
+            }
+        }
+
+        if (areaTotalPiezas === 0) return;
+
+        // Factor de eficiencia (0.8) porque siempre hay recortes que sobran pero no sirven
+        let placas = Math.ceil((areaTotalPiezas / 0.80) / areaPlaca);
+        
+        const resDiv = document.getElementById('resultado');
+        resDiv.style.display = "block";
+        resDiv.innerHTML = `<strong>Necesitás aproximadamente: ${placas} placa(s)</strong><br><br>
+        <small>Cálculo incluye disco de 3mm y margen de desperdicio técnico.</small>`;
+    }
+</script>
+
+</body>
+</html>
