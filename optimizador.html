@@ -2,115 +2,75 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Optimizador de Cortes - Taller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizador Holística Art</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .stats-panel { background: #e9ecef; padding: 15px; margin-top: 20px; border-left: 5px solid #28a745; display: none; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input, select { padding: 8px; width: 100%; box-sizing: border-box; }
-        button { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        button:hover { background: #218838; }
-        #canvas-container { margin-top: 20px; overflow-x: auto; }
-        canvas { border: 1px solid #ccc; background: #fff; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #28a745; color: white; padding: 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 20px; }
+        #reporte { margin-top: 20px; padding: 15px; background: #e9ecef; border-left: 5px solid #28a745; display: none; }
+        .resultado { font-size: 18px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Optimizador de Cortes Profesionales</h2>
+    <h2>Optimizador de Cortes</h2>
     
-    <div class="input-group">
-        <label>Seleccionar Material (Placa):</label>
-        <select id="material" onchange="actualizarMedidas()">
-            <option value="1220,2440,veta">Fenólico (1.22 x 2.44m) - Con Veta</option>
-            <option value="1830,2660,no">Fibrofacil (1.83 x 2.66m) - Sin Veta</option>
-            <option value="1200,3000,veta">Multilaminado Pino (1.20 x 3.0m) - Con Veta</option>
-            <option value="1200,3000,veta">Multilaminado Saligna (1.20 x 3.0m) - Con Veta</option>
-        </select>
-    </div>
+    <label>Seleccionar Material:</label>
+    <select id="material">
+        <option value="2.9768">Fenólico (1.22 x 2.44m)</option>
+        <option value="4.8678">Fibrofacil (1.83 x 2.66m)</option>
+        <option value="3.6">Multilaminado Pino (1.20 x 3.0m)</option>
+        <option value="3.6">Multilaminado Saligna (1.20 x 3.0m)</option>
+    </select>
 
-    <div class="input-group">
-        <label>Ingresar Cortes (Ancho x Alto x Cantidad):</label>
-        <small>Ejemplo: 400x600x4, 300x300x2</small>
-        <input type="text" id="cortesInput" placeholder="400x600x4, 200x500x2">
-    </div>
+    <label>Ingresar Cortes (Ancho x Alto x Cantidad):</label>
+    <textarea id="cortes" rows="5" placeholder="Ejemplo: 400x600x4"></textarea>
+    
+    <p><small>* Cálculo incluye 3mm de espesor de disco.</small></p>
 
-    <button onclick="optimizar()">Calcular y Ver Reporte</button>
+    <button onclick="calcular()">CALCULAR Y VER REPORTE</button>
 
-    <div id="stats" class="stats-panel">
+    <div id="reporte">
         <h3>Reporte de Material</h3>
-        <p id="totalPlacaArea"></p>
-        <p id="totalCorteArea"></p>
-        <p id="totalSobranteArea"></p>
-        <p id="eficiencia"></p>
-    </div>
-
-    <div id="canvas-container">
-        <canvas id="canvas"></canvas>
+        <div class="resultado" id="resPlaca"></div>
+        <div class="resultado" id="resCortes"></div>
+        <div class="resultado" id="resSobrante"></div>
     </div>
 </div>
 
 <script>
-    function optimizar() {
-        const materialData = document.getElementById('material').value.split(',');
-        const pAncho = parseInt(materialData[0]);
-        const pAlto = parseInt(materialData[1]);
-        const tieneVeta = materialData[2] === 'veta';
-        const disco = 3; // Tu disco de 3mm
-        
-        const input = document.getElementById('cortesInput').value;
-        if (!input) return alert("Ingresá las medidas de los cortes");
+function calcular() {
+    const areaPlaca = parseFloat(document.getElementById('material').value);
+    const texto = document.getElementById('cortes').value.trim();
+    const lineas = texto.split(/[\n,]+/);
+    let areaTotalCortes = 0;
+    const disco = 0.003; 
 
-        let listaCortes = [];
-        input.split(',').forEach(item => {
-            const [w, h, cant] = item.trim().split('x').map(Number);
-            for(let i=0; i<cant; i++) listaCortes.push({w, h});
-        });
+    lineas.forEach(linea => {
+        const d = linea.toLowerCase().split('x');
+        if (d.length === 3) {
+            const ancho = (parseFloat(d[0]) / 1000) + disco;
+            const alto = (parseFloat(d[1]) / 1000) + disco;
+            const cant = parseInt(d[2]);
+            areaTotalCortes += (ancho * alto * cant);
+        }
+    });
 
-        // --- Lógica Simple de Cálculo de Áreas ---
-        let areaCortesTotal = 0;
-        listaCortes.forEach(c => {
-            // Sumamos el área + el desperdicio estimado por el disco en dos lados
-            areaCortesTotal += (c.w * c.h) / 1000000; 
-        });
-
-        const areaPlacaTotal = (pAncho * pAlto) / 1000000;
-        const sobrante = areaPlacaTotal - areaCortesTotal;
-        const porcEficiencia = (areaCortesTotal / areaPlacaTotal) * 100;
-
-        // Mostrar Resultados
-        document.getElementById('stats').style.display = 'block';
-        document.getElementById('totalPlacaArea').innerText = `Área de la Placa: ${areaPlacaTotal.toFixed(2)} m²`;
-        document.getElementById('totalCorteArea').innerText = `Área ocupada por cortes: ${areaCortesTotal.toFixed(2)} m²`;
-        document.getElementById('totalSobranteArea').innerText = `Sobrante estimado: ${sobrante.toFixed(2)} m²`;
-        document.getElementById('eficiencia').innerText = `Eficiencia de aprovechamiento: ${porcEficiencia.toFixed(1)}%`;
-
-        dibujar(pAncho, pAlto, listaCortes);
+    if (areaTotalCortes > 0) {
+        document.getElementById('resPlaca').innerHTML = "<b>Área de Placa:</b> " + areaPlaca.toFixed(2) + " m²";
+        document.getElementById('resCortes').innerHTML = "<b>Área en Cortes (con disco):</b> " + areaTotalCortes.toFixed(2) + " m²";
+        const sobrante = areaPlaca - areaTotalCortes;
+        document.getElementById('resSobrante').innerHTML = "<b>Sobrante estimado:</b> " + sobrante.toFixed(2) + " m²";
+        document.getElementById('reporte').style.display = 'block';
+    } else {
+        alert("Por favor, ingresá los datos correctamente (Ej: 400x600x4)");
     }
-
-    function dibujar(w, h, cortes) {
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const escala = 0.2; // Escala para ver en pantalla
-        
-        canvas.width = w * escala;
-        canvas.height = h * escala;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#deb887"; // Color madera
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Aquí iría el dibujo de cada pieza (simplificado para el ejemplo)
-        let xCur = 5, yCur = 5;
-        cortes.forEach(c => {
-            ctx.strokeStyle = "#000";
-            ctx.strokeRect(xCur*escala, yCur*escala, c.w*escala, c.h*escala);
-            ctx.fillStyle = "rgba(255,255,255,0.5)";
-            ctx.fillRect(xCur*escala, yCur*escala, c.w*escala, c.h*escala);
-            xCur += c.w + 3; // +3mm de disco
-        });
-    }
+}
 </script>
 
 </body>
