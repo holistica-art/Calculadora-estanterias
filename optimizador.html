@@ -2,90 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimizador ALMA PLENA</title>
+    <title>Optimizador de Cortes - Taller</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        select, input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-        button { background: #2c3e50; color: white; font-weight: bold; cursor: pointer; border: none; }
-        button:hover { background: #34495e; }
-        .resultado { margin-top: 20px; padding: 15px; background: #e8f6ef; border-left: 5px solid #27ae60; }
-        h2 { color: #2c3e50; margin-top: 0; }
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .stats-panel { background: #e9ecef; padding: 15px; margin-top: 20px; border-left: 5px solid #28a745; display: none; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, select { padding: 8px; width: 100%; box-sizing: border-box; }
+        button { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #218838; }
+        #canvas-container { margin-top: 20px; overflow-x: auto; }
+        canvas { border: 1px solid #ccc; background: #fff; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>🛠️ Optimizador de Placas</h2>
+<div class="container">
+    <h2>Optimizador de Cortes Profesionales</h2>
     
-    <label>Material:</label>
-    <select id="material">
-        <option value="2440x1220">Fenólico (2.44 x 1.22m)</option>
-        <option value="2660x1830">Fibrofacil (2.66 x 1.83m)</option>
-        <option value="3000x1200">Pino (3.00 x 1.20m)</option>
-        <option value="3000x1200">Saligna (3.00 x 1.20m)</option>
-    </select>
-
-    <label>Piezas a cortar (Largo x Ancho en mm):</label>
-    <div id="lista-piezas">
-        <div style="display: flex; gap: 5px;">
-            <input type="number" placeholder="Cant" class="p-cant" style="width: 25%;">
-            <input type="number" placeholder="Largo mm" class="p-largo">
-            <input type="number" placeholder="Ancho mm" class="p-ancho">
-        </div>
+    <div class="input-group">
+        <label>Seleccionar Material (Placa):</label>
+        <select id="material" onchange="actualizarMedidas()">
+            <option value="1220,2440,veta">Fenólico (1.22 x 2.44m) - Con Veta</option>
+            <option value="1830,2660,no">Fibrofacil (1.83 x 2.66m) - Sin Veta</option>
+            <option value="1200,3000,veta">Multilaminado Pino (1.20 x 3.0m) - Con Veta</option>
+            <option value="1200,3000,veta">Multilaminado Saligna (1.20 x 3.0m) - Con Veta</option>
+        </select>
     </div>
-    
-    <button onclick="agregarFila()">+ Agregar otra medida</button>
-    <button onclick="calcular()" style="background: #e67e22;">CALCULAR PLACAS</button>
 
-    <div id="resultado" class="resultado" style="display:none;"></div>
+    <div class="input-group">
+        <label>Ingresar Cortes (Ancho x Alto x Cantidad):</label>
+        <small>Ejemplo: 400x600x4, 300x300x2</small>
+        <input type="text" id="cortesInput" placeholder="400x600x4, 200x500x2">
+    </div>
+
+    <button onclick="optimizar()">Calcular y Ver Reporte</button>
+
+    <div id="stats" class="stats-panel">
+        <h3>Reporte de Material</h3>
+        <p id="totalPlacaArea"></p>
+        <p id="totalCorteArea"></p>
+        <p id="totalSobranteArea"></p>
+        <p id="eficiencia"></p>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
 </div>
 
 <script>
-    const DISCO = 3; // mm de tu disco
+    function optimizar() {
+        const materialData = document.getElementById('material').value.split(',');
+        const pAncho = parseInt(materialData[0]);
+        const pAlto = parseInt(materialData[1]);
+        const tieneVeta = materialData[2] === 'veta';
+        const disco = 3; // Tu disco de 3mm
+        
+        const input = document.getElementById('cortesInput').value;
+        if (!input) return alert("Ingresá las medidas de los cortes");
 
-    function agregarFila() {
-        const div = document.createElement('div');
-        div.style.display = "flex";
-        div.style.gap = "5px";
-        div.innerHTML = `
-            <input type="number" placeholder="Cant" class="p-cant" style="width: 25%;">
-            <input type="number" placeholder="Largo mm" class="p-largo">
-            <input type="number" placeholder="Ancho mm" class="p-ancho">
-        `;
-        document.getElementById('lista-piezas').appendChild(div);
+        let listaCortes = [];
+        input.split(',').forEach(item => {
+            const [w, h, cant] = item.trim().split('x').map(Number);
+            for(let i=0; i<cant; i++) listaCortes.push({w, h});
+        });
+
+        // --- Lógica Simple de Cálculo de Áreas ---
+        let areaCortesTotal = 0;
+        listaCortes.forEach(c => {
+            // Sumamos el área + el desperdicio estimado por el disco en dos lados
+            areaCortesTotal += (c.w * c.h) / 1000000; 
+        });
+
+        const areaPlacaTotal = (pAncho * pAlto) / 1000000;
+        const sobrante = areaPlacaTotal - areaCortesTotal;
+        const porcEficiencia = (areaCortesTotal / areaPlacaTotal) * 100;
+
+        // Mostrar Resultados
+        document.getElementById('stats').style.display = 'block';
+        document.getElementById('totalPlacaArea').innerText = `Área de la Placa: ${areaPlacaTotal.toFixed(2)} m²`;
+        document.getElementById('totalCorteArea').innerText = `Área ocupada por cortes: ${areaCortesTotal.toFixed(2)} m²`;
+        document.getElementById('totalSobranteArea').innerText = `Sobrante estimado: ${sobrante.toFixed(2)} m²`;
+        document.getElementById('eficiencia').innerText = `Eficiencia de aprovechamiento: ${porcEficiencia.toFixed(1)}%`;
+
+        dibujar(pAncho, pAlto, listaCortes);
     }
 
-    function calcular() {
-        const matData = document.getElementById('material').value.split('x');
-        const matL = parseInt(matData[0]);
-        const matA = parseInt(matData[1]);
-        const areaPlaca = matL * matA;
-
-        let areaTotalPiezas = 0;
-        const cants = document.getElementsByClassName('p-cant');
-        const largos = document.getElementsByClassName('p-largo');
-        const anchos = document.getElementsByClassName('p-ancho');
-
-        for (let i = 0; i < cants.length; i++) {
-            if (cants[i].value && largos[i].value && anchos[i].value) {
-                // Sumamos el disco (3mm) a cada pieza para el cálculo real
-                let l = parseFloat(largos[i].value) + DISCO;
-                let a = parseFloat(anchos[i].value) + DISCO;
-                areaTotalPiezas += parseInt(cants[i].value) * l * a;
-            }
-        }
-
-        if (areaTotalPiezas === 0) return;
-
-        // Factor de eficiencia (0.8) porque siempre hay recortes que sobran pero no sirven
-        let placas = Math.ceil((areaTotalPiezas / 0.80) / areaPlaca);
+    function dibujar(w, h, cortes) {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const escala = 0.2; // Escala para ver en pantalla
         
-        const resDiv = document.getElementById('resultado');
-        resDiv.style.display = "block";
-        resDiv.innerHTML = `<strong>Necesitás aproximadamente: ${placas} placa(s)</strong><br><br>
-        <small>Cálculo incluye disco de 3mm y margen de desperdicio técnico.</small>`;
+        canvas.width = w * escala;
+        canvas.height = h * escala;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#deb887"; // Color madera
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Aquí iría el dibujo de cada pieza (simplificado para el ejemplo)
+        let xCur = 5, yCur = 5;
+        cortes.forEach(c => {
+            ctx.strokeStyle = "#000";
+            ctx.strokeRect(xCur*escala, yCur*escala, c.w*escala, c.h*escala);
+            ctx.fillStyle = "rgba(255,255,255,0.5)";
+            ctx.fillRect(xCur*escala, yCur*escala, c.w*escala, c.h*escala);
+            xCur += c.w + 3; // +3mm de disco
+        });
     }
 </script>
 
