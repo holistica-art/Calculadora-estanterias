@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Cortes con Mano de Obra</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 12px; max-width: 450px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #1a1a1a; text-align: center; border-bottom: 3px solid #f39c12; padding-bottom: 10px; }
+        label { display: block; margin-top: 12px; font-weight: bold; color: #555; font-size: 0.9em; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        input:focus { border-color: #f39c12; outline: none; background-color: #fffdf9; }
+        .flex-row { display: flex; gap: 10px; }
+        .section-title { margin-top: 20px; color: #f39c12; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .result-box { margin-top: 25px; padding: 20px; background: #2c3e50; color: white; border-radius: 8px; }
+        .result-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1em; opacity: 0.9; }
+        .total-highlight { font-size: 1.6em; color: #f39c12; font-weight: bold; border-top: 1px solid #555; margin-top: 10px; padding-top: 10px;}
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Presupuesto de Taller</h2>
+    
+    <label>Precio Placa Entera ($):</label>
+    <input type="number" id="precioPlaca" placeholder="Ej: 60000" oninput="calcular()">
+
+    <div class="flex-row">
+        <div style="flex:1">
+            <label>Largo Placa (cm):</label>
+            <input type="number" id="largoP" placeholder="260" oninput="calcular()">
+        </div>
+        <div style="flex:1">
+            <label>Ancho Placa (cm):</label>
+            <input type="number" id="anchoP" placeholder="183" oninput="calcular()">
+        </div>
+    </div>
+
+    <div class="section-title">Detalle del Trabajo</div>
+
+    <div class="flex-row">
+        <div style="flex:1">
+            <label>Largo Corte (cm):</label>
+            <input type="number" id="largoC" oninput="calcular()">
+        </div>
+        <div style="flex:1">
+            <label>Ancho Corte (cm):</label>
+            <input type="number" id="anchoC" oninput="calcular()">
+        </div>
+    </div>
+
+    <div class="flex-row">
+        <div style="flex:1">
+            <label>Precio c/ Tirada ($):</label>
+            <input type="number" id="precioTirada" placeholder="Ej: 500" oninput="calcular()">
+        </div>
+        <div style="flex:1">
+            <label>Cant. Tiradas:</label>
+            <input type="number" id="cantTiradas" placeholder="1 o 2" oninput="calcular()">
+        </div>
+    </div>
+
+    <label>Multiplicador Final (Ganancia):</label>
+    <input type="number" id="multi" value="2" step="0.1" oninput="calcular()">
+
+    <div class="result-box">
+        <div class="result-line">
+            <span>Solo Material:</span>
+            <span id="soloMaterial">$0.00</span>
+        </div>
+        <div class="result-line">
+            <span>Total Cortes:</span>
+            <span id="soloCortes">$0.00</span>
+        </div>
+        <div class="result-line total-highlight">
+            <span>PRECIO VENTA:</span>
+            <span id="precioVenta">$0.00</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function calcular() {
+    const pPlaca = parseFloat(document.getElementById('precioPlaca').value) || 0;
+    const lP = parseFloat(document.getElementById('largoP').value) || 0;
+    const aP = parseFloat(document.getElementById('anchoP').value) || 0;
+    
+    const lC = parseFloat(document.getElementById('largoC').value) || 0;
+    const aC = parseFloat(document.getElementById('anchoC').value) || 0;
+    
+    const pTirada = parseFloat(document.getElementById('precioTirada').value) || 0;
+    const cTiradas = parseFloat(document.getElementById('cantTiradas').value) || 0;
+    
+    const multi = parseFloat(document.getElementById('multi') .value) || 1;
+
+    if (pPlaca && lP && aP && lC && aC) {
+        // Cálculo de m2
+        const m2Placa = (lP * aP) / 10000;
+        const m2Corte = (lC * aC) / 10000;
+        const costoMaterialPuro = (pPlaca / m2Placa) * m2Corte;
+        
+        // Cálculo de mano de obra por cortes
+        const costoTotalCortes = pTirada * cTiradas;
+        
+        // Suma y ganancia
+        const ventaFinal = (costoMaterialPuro + costoTotalCortes) * multi;
+
+        document.getElementById('soloMaterial').innerText = "$" + costoMaterialPuro.toLocaleString('es-AR', {maximumFractionDigits: 2});
+        document.getElementById('soloCortes').innerText = "$" + costoTotalCortes.toLocaleString('es-AR', {maximumFractionDigits: 2});
+        document.getElementById('precioVenta').innerText = "$" + ventaFinal.toLocaleString('es-AR', {maximumFractionDigits: 2});
+    }
+}
+</script>
+
+</body>
+</html>
