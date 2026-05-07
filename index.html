@@ -65,10 +65,10 @@
                 </div>
             </div>
 
-            <!-- Medidas -->
+            <!-- Medidas y Cantidad -->
             <div class="bg-white p-6 rounded-2xl shadow-lg border-l-8 border-blue-500">
                 <h2 class="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase italic">
-                    <span>📏</span> Medidas del Mueble
+                    <span>📏</span> Medidas y Cantidad
                 </h2>
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
@@ -87,9 +87,14 @@
                             <input type="number" id="prof" value="40" class="w-full mt-1 p-2 bg-slate-50 border-2 border-slate-200 rounded-xl outline-none font-bold">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Estantes</label>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">N° Estantes</label>
                             <input type="number" id="estantes" value="5" class="w-full mt-1 p-2 bg-slate-50 border-2 border-slate-200 rounded-xl outline-none font-bold">
                         </div>
+                    </div>
+                    <!-- NUEVO CAMPO DE CANTIDAD -->
+                    <div class="pt-2 border-t border-slate-100">
+                        <label class="block text-[10px] font-bold text-blue-600 uppercase">Cantidad de Muebles Iguales</label>
+                        <input type="number" id="cantMuebles" value="1" min="1" class="w-full mt-1 p-2 bg-blue-50 border-2 border-blue-200 rounded-xl outline-none font-bold text-blue-700">
                     </div>
                 </div>
             </div>
@@ -98,33 +103,37 @@
         <!-- RESULTADO -->
         <div class="bg-slate-900 p-8 rounded-[2rem] shadow-2xl text-white relative overflow-hidden">
             <div class="relative z-10">
-                <p class="text-orange-400 text-xs font-black uppercase tracking-[0.3em] mb-2 text-center md:text-left">Precio de Venta</p>
-                <div class="text-6xl md:text-7xl font-black text-white mb-6 text-center md:text-left" id="precioFinal">$ 0,00</div>
+                <p class="text-orange-400 text-xs font-black uppercase tracking-[0.3em] mb-2 text-center md:text-left">Precio de Venta Total</p>
+                <div class="text-6xl md:text-7xl font-black text-white mb-6 text-center md:text-left" id="precioFinal">$ 0</div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-700">
                     <div class="bg-slate-800/50 p-4 rounded-xl no-print">
-                        <span class="block text-[10px] text-slate-400 font-bold uppercase mb-1 italic">Costo Materiales</span>
+                        <span class="block text-[10px] text-slate-400 font-bold uppercase mb-1 italic">Costo Total Materiales</span>
                         <span class="text-2xl font-bold text-white" id="resCostoMat">$ 0</span>
                     </div>
                     <div class="bg-slate-800/50 p-4 rounded-xl no-print">
-                        <span class="block text-[10px] text-slate-400 font-bold uppercase mb-1 italic">Tu Ganancia</span>
+                        <span class="block text-[10px] text-slate-400 font-bold uppercase mb-1 italic">Tu Ganancia Total</span>
                         <span class="text-2xl font-bold text-green-400" id="resManoObra">$ 0</span>
                     </div>
 
                     <div class="print-only col-span-2 space-y-4 text-slate-800">
-                        <h3 class="text-lg font-black uppercase underline">Detalle del Trabajo:</h3>
+                        <h3 class="text-lg font-black uppercase underline">Detalle del Presupuesto:</h3>
                         <ul class="text-sm space-y-2 font-medium">
+                            <li>📦 Cantidad: <span id="printCant" class="font-bold"></span> mueble(s) completo(s).</li>
                             <li>✅ Estructura de Pino seleccionado (Cepillado).</li>
                             <li>✅ Estantes de Fenólico de 18mm de espesor.</li>
-                            <li>✅ Sistema reforzado con <span id="printPatas" class="font-bold"></span> patas de apoyo.</li>
-                            <li>📏 Medidas: <span id="printMedidas" class="font-bold"></span></li>
+                            <li>✅ Sistema reforzado con <span id="printPatas" class="font-bold"></span> patas de apoyo por mueble.</li>
+                            <li>📏 Medidas unitarias: <span id="printMedidas" class="font-bold"></span></li>
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="no-print pb-10">
+        <div class="no-print pb-10 flex flex-col gap-4">
+            <button onclick="enviarWhatsApp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-lg uppercase italic">
+                <span>📱</span> Enviar por WhatsApp
+            </button>
             <button onclick="window.print()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 text-lg uppercase italic">
                 <span>🖨️</span> Imprimir para el Cliente
             </button>
@@ -132,33 +141,68 @@
     </div>
 
     <script>
-        const ids = ['precioPlaca', 'precioPino', 'multiplicador', 'alto', 'ancho', 'prof', 'estantes'];
+        const ids = ['precioPlaca', 'precioPino', 'multiplicador', 'alto', 'ancho', 'prof', 'estantes', 'cantMuebles'];
+        
+        function redondearDecena(numero) {
+            return Math.ceil(numero / 10) * 10;
+        }
+
         function calcular() {
             const val = (id) => parseFloat(document.getElementById(id).value) || 0;
             const pPlaca = val('precioPlaca');
             const pPino = val('precioPino');
             const mult = val('multiplicador');
-            const alto = val('alto'), ancho = val('ancho'), prof = val('prof'), cant = val('estantes');
+            const alto = val('alto'), ancho = val('ancho'), prof = val('prof'), cantEstantes = val('estantes');
+            const cantMuebles = val('cantMuebles') || 1;
 
             document.getElementById('fechaActual').innerText = "Totoras, " + new Date().toLocaleDateString('es-AR');
 
             let marcos = ancho > 180 ? 4 : (ancho > 110 ? 3 : 2);
             const patas = marcos * 2;
             
-            const metrosPino = ((alto * patas) + (prof * patas * cant) + (ancho * 2 * cant)) / 100;
+            // Cálculo unitario
+            const metrosPino = ((alto * patas) + (prof * patas * cantEstantes) + (ancho * 2 * cantEstantes)) / 100;
             const costoPino = (metrosPino * 1.15) * pPino;
-            const m2Placa = (ancho * prof * cant) / 10000;
+            const m2Placa = (ancho * prof * cantEstantes) / 10000;
             const costoFen = (m2Placa * 1.15 / (2.44 * 1.22)) * pPlaca;
 
-            const totalMat = costoPino + costoFen + 5000;
-            const final = totalMat * mult;
+            const totalMatUnitario = costoPino + costoFen + 5000;
+            
+            // Aplicar Cantidad de Muebles
+            const totalMatGeneral = totalMatUnitario * cantMuebles;
+            let ventaFinal = totalMatGeneral * mult;
+            
+            // REDONDEO A LA DECENA
+            ventaFinal = redondearDecena(ventaFinal);
 
-            document.getElementById('precioFinal').innerText = "$ " + Math.round(final).toLocaleString('es-AR');
-            document.getElementById('resCostoMat').innerText = "$ " + Math.round(totalMat).toLocaleString('es-AR');
-            document.getElementById('resManoObra').innerText = "$ " + Math.round(final - totalMat).toLocaleString('es-AR');
+            // Mostrar resultados
+            document.getElementById('precioFinal').innerText = "$ " + ventaFinal.toLocaleString('es-AR');
+            document.getElementById('resCostoMat').innerText = "$ " + Math.round(totalMatGeneral).toLocaleString('es-AR');
+            document.getElementById('resManoObra').innerText = "$ " + Math.round(ventaFinal - totalMatGeneral).toLocaleString('es-AR');
+            
+            // Datos para impresión
             document.getElementById('printMedidas').innerText = `${alto}x${ancho}x${prof} cm`;
             document.getElementById('printPatas').innerText = patas;
+            document.getElementById('printCant').innerText = cantMuebles;
         }
+
+        function enviarWhatsApp() {
+            const total = document.getElementById('precioFinal').innerText;
+            const medidas = document.getElementById('printMedidas').innerText;
+            const cant = document.getElementById('cantMuebles').value;
+            
+            const mensaje = encodeURIComponent(
+                `*Presupuesto - Artesanías La Villa*\n\n` +
+                `*Producto:* Estantería Sistema Reforzado\n` +
+                `*Cantidad:* ${cant} unidad(es)\n` +
+                `*Medidas:* ${medidas}\n` +
+                `*Total:* ${total}\n\n` +
+                `_📍 Totoras, Santa Fe_`
+            );
+            
+            window.open(`https://wa.me/?text=${mensaje}`, '_blank');
+        }
+
         ids.forEach(id => document.getElementById(id).addEventListener('input', calcular));
         calcular();
     </script>
