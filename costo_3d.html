@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Impresión 3D</title>
+    <style>
+        :root {
+            --primary: #2b6cb0;
+            --primary-hover: #2c5282;
+            --success: #2f855a;
+            --success-hover: #22543d;
+            --background: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary);
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .results {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .results p {
+            margin: 8px 0;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .results p.total {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            border-top: 1px solid var(--border);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background 0.2s;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+
+        .btn-calc { background-color: var(--primary); }
+        .btn-calc:hover { background-color: var(--primary-hover); }
+
+        .btn-ws { background-color: #25d366; }
+        .btn-ws:hover { background-color: #128c7e; }
+
+        .btn-print { background-color: #4a5568; }
+        .btn-print:hover { background-color: #2d3748; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .btn, .form-group, h2 { display: none; }
+            .results { border: none; background: white; padding: 0; }
+            .results::before { content: "PRESUPUESTO DE IMPRESIÓN 3D"; display: block; font-size: 20px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Cotizador de Impresión 3D</h2>
+    
+    <div class="form-group">
+        <label for="concepto">Nombre de la pieza / Proyecto:</label>
+        <input type="text" id="concepto" placeholder="Ej: Engranaje, Soporte, Lámpara...">
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label for="precioKg">Precio por Kg ($):</label>
+            <input type="number" id="precioKg" value="0" step="any">
+        </div>
+        <div class="form-group">
+            <label for="gramos">Gramos por pieza (g):</label>
+            <input type="number" id="gramos" value="0" step="any">
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label for="horas">Tiempo (Horas totales):</label>
+            <input type="number" id="horas" value="0" step="any">
+        </div>
+        <div class="form-group">
+            <label for="unidades">Cantidad de unidades:</label>
+            <input type="number" id="unidades" value="1" min="1">
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label for="multiplicador">Multiplicador (Ganancia):</label>
+            <input type="number" id="multiplicador" value="3" step="0.1" title="Multiplica el costo base (ej: 3 para triplicar)">
+        </div>
+        <div class="form-group">
+            <label for="costoHora">Costo Luz/Amortiz. por Hora ($):</label>
+            <input type="number" id="costoHora" value="100" step="any" title="Suma de consumo eléctrico y desgaste mecánico">
+        </div>
+    </div>
+
+    <button class="btn btn-calc" onclick="calcular()">Calcular Costo</button>
+
+    <div class="results" id="resultadoBox" style="display:none;">
+        <p><span>Costo Material (Total):</span> <span id="resMaterial">$0.00</span></p>
+        <p><span>Costo Operativo (Total):</span> <span id="resOperativo">$0.00</span></p>
+        <p><span>Costo Base Fabricación:</span> <span id="resCostoBase">$0.00</span></p>
+        <p class="total"><span>PRECIO DE VENTA:</span> <span id="resPrecioVenta">$0.00</span></p>
+    </div>
+
+    <button class="btn btn-ws" id="btnWs" onclick="enviarWhatsApp()" style="display:none;">Enviar por WhatsApp</button>
+    <button class="btn btn-print" id="btnPrint" onclick="window.print()" style="display:none;">Imprimir Presupuesto</button>
+</div>
+
+<script>
+    function calcular() {
+        // Capturar valores
+        const concepto = document.getElementById('concepto').value || "Pieza 3D";
+        const precioKg = parseFloat(document.getElementById('precioKg').value) || 0;
+        const gramos = parseFloat(document.getElementById('gramos').value) || 0;
+        const horas = parseFloat(document.getElementById('horas').value) || 0;
+        const unidades = parseInt(document.getElementById('unidades').value) || 1;
+        const multiplicador = parseFloat(document.getElementById('multiplicador').value) || 1;
+        const costoHora = parseFloat(document.getElementById('costoHora').value) || 0;
+
+        // Cálculos correspondientes
+        const costoMaterialPorUnidad = (precioKg / 1000) * gramos;
+        const costoOperativoTotal = horas * costoHora; // Costo por el tiempo total de uso de la máquina
+        
+        const costoMaterialTotal = costoMaterialPorUnidad * unidades;
+        const costoBaseTotal = costoMaterialTotal + costoOperativoTotal;
+        const precioVentaFinal = costoBaseTotal * multiplicador;
+
+        // Mostrar en la pantalla
+        document.getElementById('resMaterial').innerText = `$${costoMaterialTotal.toFixed(2)}`;
+        document.getElementById('resOperativo').innerText = `$${costoOperativoTotal.toFixed(2)}`;
+        document.getElementById('resCostoBase').innerText = `$${costoBaseTotal.toFixed(2)}`;
+        document.getElementById('resPrecioVenta').innerText = `$${precioVentaFinal.toFixed(2)}`;
+
+        // Hacer visibles los resultados y botones de acción
+        document.getElementById('resultadoBox').style.display = 'block';
+        document.getElementById('btnWs').style.display = 'block';
+        document.getElementById('btnPrint').style.display = 'block';
+    }
+
+    function enviarWhatsApp() {
+        const concepto = document.getElementById('concepto').value || "Pieza 3D";
+        const unidades = document.getElementById('unidades').value;
+        const venta = document.getElementById('resPrecioVenta').innerText;
+
+        // Texto formateado para WhatsApp
+        const mensaje = `*Presupuesto Impresión 3D*%0A` +
+                        `*Concepto:* ${concepto}%0A` +
+                        `*Cantidad:* ${unidades} unidad(es)%0A` +
+                        `*Precio Total:* ${venta}%0A%0A` +
+                        `Muchas gracias por tu consulta.`;
+
+        // Abre WhatsApp en pestaña nueva
+        window.open(`https://api.whatsapp.com/send?text=${mensaje}`, '_blank');
+    }
+</script>
+
+</body>
+</html>
