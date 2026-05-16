@@ -14,12 +14,22 @@
         .flex-row { display: flex; gap: 10px; }
         .section-title { margin-top: 20px; color: #f39c12; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
         
+        /* Panel de Metros Cuadrados */
+        .panel-superficie { background: #edf2f7; border: 1px solid #cbd5e0; border-radius: 8px; padding: 12px; margin-top: 15px; }
+        .panel-superficie p { margin: 6px 0; font-size: 0.95em; display: flex; justify-content: space-between; font-weight: 500; }
+        .alerta-exceso { color: #fff !important; background-color: #e74c3c; padding: 4px 8px; border-radius: 4px; font-weight: bold; animation: parpadeo 1s infinite alternate; }
+        
+        @keyframes parpadeo {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
+        }
+
         /* Botoneras de carga */
         .btn-add-rect { background-color: #2c3e50; color: white; margin-top: 10px; font-size: 0.9em; }
         .btn-add-tri { background-color: #7f8c8d; color: white; margin-top: 10px; font-size: 0.9em; }
         
         /* Lista de piezas agregadas */
-        .lista-piezas { margin-top: 15px; max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; }
+        .lista-piezas { margin-top: 15px; max-height: 180px; overflow-y: auto; background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; }
         .pieza-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; border-left: 4px solid #f39c12; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .pieza-item.tri { border-left-color: #9b59b6; }
         .btn-del { background: #e74c3c; color: white; padding: 4px 8px; font-size: 0.8em; width: auto; border-radius: 4px; }
@@ -37,7 +47,7 @@
         .btn-print { background-color: #3498db; color: white; font-size: 16px; }
         
         @media print {
-            .no-print, .section-title, label, input, select, .btn-container, .ganancia-info, .lista-piezas, button { display: none !important; }
+            .no-print, .section-title, label, input, select, .btn-container, .ganancia-info, .lista-piezas, button, .panel-superficie { display: none !important; }
             body { background: white; padding: 0; }
             .card { box-shadow: none; border: none; max-width: 100%; padding: 0; }
             .result-box { background: white; color: black; padding: 0; }
@@ -72,6 +82,15 @@
                 <label>Ancho Placa (cm):</label>
                 <input type="number" id="anchoP" value="183" oninput="calcularTodo()">
             </div>
+        </div>
+    </div>
+
+    <!-- Control de Superficies (M2) -->
+    <div class="panel-superficie no-print">
+        <p><span>Superficie Placa Entera:</span> <span id="m2PlacaVisual">4.76 m²</span></p>
+        <p><span>Superficie Total Cortes:</span> <span id="m2CortesVisual">0.00 m²</span></p>
+        <div id="cartelAlerta" style="display: none; text-align: center; margin-top: 8px; font-size: 0.85em;" class="alerta-exceso">
+            ¡OJO! Los cortes superan la placa entera
         </div>
     </div>
 
@@ -192,6 +211,9 @@ function actualizarInterfazYCalcular() {
         document.getElementById('soloMaterial').innerText = "$0";
         document.getElementById('soloCortes').innerText = "$0";
         document.getElementById('precioVenta').innerText = "$0";
+        document.getElementById('m2CortesVisual').innerText = "0.00 m²";
+        document.getElementById('m2CortesVisual').className = "";
+        document.getElementById('cartelAlerta').style.display = "none";
         return;
     }
 
@@ -219,8 +241,6 @@ function actualizarInterfazYCalcular() {
 }
 
 function calcularTodo() {
-    if (piezasCargadas.length === 0) return;
-
     const pPlaca = parseFloat(document.getElementById('precioPlaca').value) || 0;
     const lP = parseFloat(document.getElementById('largoP').value) || 0;
     const aP = parseFloat(document.getElementById('anchoP').value) || 0;
@@ -230,23 +250,44 @@ function calcularTodo() {
 
     if (lP <= 0 || aP <= 0) return;
 
+    // Calcular y mostrar M2 de la placa entera
     const m2Placa = (lP * aP) / 10000;
+    document.getElementById('m2PlacaVisual').innerText = m2Placa.toFixed(2) + " m²";
+
     const precioPorM2 = pPlaca / m2Placa;
     
     let costoMaterialAcumulado = 0;
+    let m2CortesTotales = 0;
 
+    // Sumar metros y costos de las piezas
     piezasCargadas.forEach(pieza => {
         let m2PiezaUnica = 0;
         
         if (pieza.tipo === 'triángulo') {
             m2PiezaUnica = ((pieza.medidaA * pieza.medidaB) / 2) / 10000;
+            // Para el costo usamos el recargo por desperdicio (1.15), pero para los m2 reales medidos sumamos el neto
+            m2CortesTotales += m2PiezaUnica * pieza.cantidad;
             m2PiezaUnica = m2PiezaUnica * 1.15; 
         } else {
             m2PiezaUnica = (pieza.medidaA * pieza.medidaB) / 10000;
+            m2CortesTotales += m2PiezaUnica * pieza.cantidad;
         }
 
         costoMaterialAcumulado += (precioPorM2 * m2PiezaUnica) * pieza.cantidad;
     });
+
+    // Mostrar M2 totales de cortes
+    const elementoM2Cortes = document.getElementById('m2CortesVisual');
+    elementoM2Cortes.innerText = m2CortesTotales.toFixed(2) + " m²";
+
+    // Validar si nos pasamos del límite físico de la placa
+    if (m2CortesTotales > m2Placa) {
+        elementoM2Cortes.className = "alerta-exceso";
+        document.getElementById('cartelAlerta').style.display = "block";
+    } else {
+        elementoM2Cortes.className = "";
+        document.getElementById('cartelAlerta').style.display = "none";
+    }
 
     const costoTotalCortes = pTirada * cTiradas;
     let ventaFinal = (costoMaterialAcumulado + costoTotalCortes) * multi;
