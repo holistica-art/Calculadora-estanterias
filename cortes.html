@@ -3,37 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Cortes - ALMA PLENA</title>
+    <title>Calculadora de Cortes Múltiples - ALMA PLENA</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5; }
-        .card { background: white; padding: 25px; border-radius: 12px; max-width: 450px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #1a1a1a; text-align: center; border-bottom: 3px solid #f39c12; padding-bottom: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h2 { color: #1a1a1a; text-align: center; border-bottom: 3px solid #f39c12; padding-bottom: 10px; margin-top: 0; }
         label { display: block; margin-top: 12px; font-weight: bold; color: #555; font-size: 0.9em; }
-        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        input:focus { border-color: #f39c12; outline: none; background-color: #fffdf9; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        input:focus, select:focus { border-color: #f39c12; outline: none; background-color: #fffdf9; }
         .flex-row { display: flex; gap: 10px; }
-        .section-title { margin-top: 20px; color: #f39c12; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .section-title { margin-top: 20px; color: #f39c12; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
         
+        /* Botoneras de carga */
+        .btn-add-rect { background-color: #2c3e50; color: white; margin-top: 10px; font-size: 0.9em; }
+        .btn-add-tri { background-color: #7f8c8d; color: white; margin-top: 10px; font-size: 0.9em; }
+        
+        /* Lista de piezas agregadas */
+        .lista-piezas { margin-top: 15px; max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; }
+        .pieza-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; border-left: 4px solid #f39c12; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .pieza-item.tri { border-left-color: #9b59b6; }
+        .btn-del { background: #e74c3c; color: white; padding: 4px 8px; font-size: 0.8em; width: auto; border-radius: 4px; }
+
         /* Caja de resultados */
         .result-box { margin-top: 25px; padding: 20px; background: #2c3e50; color: white; border-radius: 8px; }
         .result-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1em; opacity: 0.9; }
         .total-highlight { font-size: 1.6em; color: #f39c12; font-weight: bold; border-top: 1px solid #555; margin-top: 10px; padding-top: 10px;}
         
-        /* Botones */
+        /* Botones de acción */
         .btn-container { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-ws { background-color: #25d366; color: white; }
+        .btn-ws { background-color: #25d366; color: white; font-size: 16px; }
         .btn-ws:hover { background-color: #128c7e; }
-        .btn-print { background-color: #3498db; color: white; }
+        .btn-print { background-color: #3498db; color: white; font-size: 16px; }
         
-        /* Ocultar elementos en impresión */
         @media print {
-            .no-print, .section-title, label, input, .btn-container, .ganancia-info { display: none !important; }
+            .no-print, .section-title, label, input, select, .btn-container, .ganancia-info, .lista-piezas, button { display: none !important; }
             body { background: white; padding: 0; }
-            .card { box-shadow: none; border: none; max-width: 100%; }
+            .card { box-shadow: none; border: none; max-width: 100%; padding: 0; }
             .result-box { background: white; color: black; padding: 0; }
             .total-highlight { color: black; border-top: 2px solid black; }
             .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
+            #detalleCliente { font-size: 1.1em; color: black; }
         }
         .print-header { display: none; }
     </style>
@@ -42,71 +52,88 @@
 
 <div class="card">
     <div class="print-header">
-        <h2 style="border:none">Presupuesto de Corte</h2>
-        <p>Carpintería Artesanal</p>
+        <h2 style="border:none; margin-bottom:0;">Presupuesto de Corte</h2>
+        <p style="margin-top:5px; font-weight:bold; color:#555;">ALMA PLENA - Carpintería Artesanal</p>
     </div>
 
     <h2 class="no-print">Presupuesto de Taller</h2>
     
+    <!-- Configuración de Placa Base -->
     <div class="no-print">
         <label>Precio Placa Entera ($):</label>
-        <input type="number" id="precioPlaca" placeholder="Ej: 60000" oninput="calcular()">
+        <input type="number" id="precioPlaca" placeholder="Ej: 60000" value="60000" oninput="calcularTodo()">
 
         <div class="flex-row">
             <div style="flex:1">
                 <label>Largo Placa (cm):</label>
-                <input type="number" id="largoP" value="260" oninput="calcular()">
+                <input type="number" id="largoP" value="260" oninput="calcularTodo()">
             </div>
             <div style="flex:1">
                 <label>Ancho Placa (cm):</label>
-                <input type="number" id="anchoP" value="183" oninput="calcular()">
+                <input type="number" id="anchoP" value="183" oninput="calcularTodo()">
             </div>
         </div>
     </div>
 
-    <div class="section-title">Detalle del Trabajo</div>
-
-    <div class="flex-row">
-        <div style="flex:1.5">
-            <label>Medidas Corte (cm):</label>
-            <div class="flex-row">
-                <input type="number" id="largoC" placeholder="Largo" oninput="calcular()">
-                <input type="number" id="anchoC" placeholder="Ancho" oninput="calcular()">
+    <!-- Sección de Carga de Piezas -->
+    <div class="section-title no-print">Cargar Piezas al Presupuesto</div>
+    
+    <div class="no-print" style="background: #fdfaf4; padding: 12px; border-radius: 8px; border: 1px dashed #f39c12; margin-top: 10px;">
+        <div class="flex-row">
+            <div style="flex:1.5">
+                <label id="labelMedidas">Medidas Rectángulo (cm):</label>
+                <div class="flex-row">
+                    <input type="number" id="medidaA" placeholder="Largo / Base">
+                    <input type="number" id="medidaB" placeholder="Ancho / Altura">
+                </div>
+            </div>
+            <div style="flex:0.5">
+                <label>Cant:</label>
+                <input type="number" id="cantPieza" value="1" min="1">
             </div>
         </div>
-        <div style="flex:0.5">
-            <label>Cant.:</label>
-            <input type="number" id="unidades" value="1" min="1" oninput="calcular()">
+        
+        <div class="flex-row" style="margin-top: 5px;">
+            <button type="button" class="btn-add-rect" onclick="agregarPieza('rectángulo')">+ Rectángulo</button>
+            <button type="button" class="btn-add-tri" onclick="agregarPieza('triángulo')">+ Triángulo</button>
         </div>
     </div>
 
-    <div class="flex-row no-print">
+    <div class="section-title">Listado de Piezas Cargadas</div>
+    <div class="lista-piezas" id="listaPiezasContenedor">
+        <!-- Acá se van mostrando las piezas dinámicamente -->
+        <div style="color:#888; text-align:center; padding: 10px; font-size: 0.9em;">No hay piezas cargadas aún.</div>
+    </div>
+
+    <!-- Mano de obra / Tiradas -->
+    <div class="flex-row no-print" style="margin-top: 10px;">
         <div style="flex:1">
             <label>Precio c/ Tirada ($):</label>
-            <input type="number" id="precioTirada" placeholder="Ej: 500" oninput="calcular()">
+            <input type="number" id="precioTirada" value="500" oninput="calcularTodo()">
         </div>
         <div style="flex:1">
-            <label>Cant. Tiradas:</label>
-            <input type="number" id="cantTiradas" placeholder="1 o 2" oninput="calcular()">
+            <label>Cant. Tiradas Totales:</label>
+            <input type="number" id="cantTiradas" value="0" placeholder="Ej: 4" oninput="calcularTodo()">
         </div>
     </div>
 
     <div class="no-print">
         <label>Multiplicador Final (Ganancia):</label>
-        <input type="number" id="multi" value="2" step="0.1" oninput="calcular()">
+        <input type="number" id="multi" value="2" step="0.1" oninput="calcularTodo()">
     </div>
 
+    <!-- Bloque de Resultados -->
     <div class="result-box">
-        <div id="detalleCliente" style="margin-bottom: 15px; font-size: 0.9em; line-height: 1.4;">
-            <!-- Aquí se mostrará el resumen para el cliente -->
+        <div id="detalleCliente" style="margin-bottom: 15px; font-size: 0.95em; line-height: 1.5;">
+            <strong>Detalle:</strong> Sin piezas cargadas.
         </div>
         
         <div class="result-line ganancia-info">
-            <span>Solo Material:</span>
+            <span>Solo Material Neto:</span>
             <span id="soloMaterial">$0</span>
         </div>
         <div class="result-line ganancia-info">
-            <span>Total Cortes:</span>
+            <span>Total Trabajo de Cortes:</span>
             <span id="soloCortes">$0</span>
         </div>
         <div class="result-line total-highlight">
@@ -122,59 +149,148 @@
 </div>
 
 <script>
+// Matriz global para ir acumulando las piezas en memoria
+let piezasCargadas = [];
+
 function redondearDecena(numero) {
     return Math.ceil(numero / 10) * 10;
 }
 
-function calcular() {
+function agregarPieza(tipo) {
+    const medA = parseFloat(document.getElementById('medidaA').value) || 0;
+    const medB = parseFloat(document.getElementById('medidaB').value) || 0;
+    const cant = parseInt(document.getElementById('cantPieza').value) || 1;
+
+    if (medA <= 0 || medB <= 0) {
+        alert("Por favor, ingresa medidas válidas mayores a 0.");
+        return;
+    }
+
+    // Guardar objeto pieza en el listado
+    piezasCargadas.push({
+        tipo: tipo,
+        medidaA: medA,
+        medidaB: medB,
+        cantidad: cant
+    });
+
+    // Limpiar campos de medida para la próxima carga
+    document.getElementById('medidaA').value = '';
+    document.getElementById('medidaB').value = '';
+    document.getElementById('cantPieza').value = '1';
+
+    actualizarInterfazYCalcular();
+}
+
+function eliminarPieza(index) {
+    piezasCargadas.splice(index, 1);
+    actualizarInterfazYCalcular();
+}
+
+function actualizarInterfazYCalcular() {
+    const contenedor = document.getElementById('listaPiezasContenedor');
+    
+    if (piezasCargadas.length === 0) {
+        contenedor.innerHTML = `<div style="color:#888; text-align:center; padding: 10px; font-size: 0.9em;">No hay piezas cargadas aún.</div>`;
+        document.getElementById('detalleCliente').innerHTML = `<strong>Detalle:</strong> Sin piezas cargadas.`;
+        document.getElementById('soloMaterial').innerText = "$0";
+        document.getElementById('soloCortes').innerText = "$0";
+        document.getElementById('precioVenta').innerText = "$0";
+        return;
+    }
+
+    // Renderizar la lista visual de piezas
+    contenedor.innerHTML = '';
+    let detalleTextoHTML = '<strong>Detalle del despiece:</strong><br>';
+    
+    piezasCargadas.forEach((pieza, index) => {
+        const claseTipo = pieza.tipo === 'triángulo' ? 'pieza-item tri' : 'pieza-item';
+        const textoMedida = pieza.tipo === 'triángulo' 
+            ? `${pieza.cantidad} triáng. de ${pieza.medidaA}cm (base) x ${pieza.medidaB}cm (alt)`
+            : `${pieza.cantidad} pieza(s) de ${pieza.medidaA}x${pieza.medidaB} cm`;
+
+        contenedor.innerHTML += `
+            <div class="${claseTipo}">
+                <span>${textoMedida}</span>
+                <button type="button" class="btn-del" onclick="eliminarPieza(${index})">X</button>
+            </div>
+        `;
+
+        detalleTextoHTML += `• ${textoMedida}.<br>`;
+    });
+
+    document.getElementById('detalleCliente').innerHTML = detalleTextoHTML;
+    calcularTodo();
+}
+
+function calcularTodo() {
+    if (piezasCargadas.length === 0) return;
+
     const pPlaca = parseFloat(document.getElementById('precioPlaca').value) || 0;
     const lP = parseFloat(document.getElementById('largoP').value) || 0;
     const aP = parseFloat(document.getElementById('anchoP').value) || 0;
-    
-    const lC = parseFloat(document.getElementById('largoC').value) || 0;
-    const aC = parseFloat(document.getElementById('anchoC').value) || 0;
-    const unidades = parseInt(document.getElementById('unidades').value) || 1;
-    
     const pTirada = parseFloat(document.getElementById('precioTirada').value) || 0;
     const cTiradas = parseFloat(document.getElementById('cantTiradas').value) || 0;
-    
     const multi = parseFloat(document.getElementById('multi').value) || 1;
 
-    if (pPlaca && lP && aP && lC && aC) {
-        const m2Placa = (lP * aP) / 10000;
-        const m2Corte = (lC * aC) / 10000;
-        
-        // Costo de material x cantidad de piezas
-        const costoMaterialPuro = ((pPlaca / m2Placa) * m2Corte) * unidades;
-        const costoTotalCortes = pTirada * cTiradas;
-        
-        // Venta final con multiplicador y REDONDEO
-        let ventaFinal = (costoMaterialPuro + costoTotalCortes) * multi;
-        ventaFinal = redondearDecena(ventaFinal);
+    if (lP <= 0 || aP <= 0) return;
 
-        // Mostrar resultados
-        document.getElementById('soloMaterial').innerText = "$" + Math.round(costoMaterialPuro).toLocaleString('es-AR');
-        document.getElementById('soloCortes').innerText = "$" + Math.round(costoTotalCortes).toLocaleString('es-AR');
-        document.getElementById('precioVenta').innerText = "$" + ventaFinal.toLocaleString('es-AR');
+    const m2Placa = (lP * aP) / 10000;
+    const precioPorM2 = pPlaca / m2Placa;
+    
+    let costoMaterialAcumulado = 0;
+
+    // Calcular los m2 de cada pieza cargada según su tipo
+    piezasCargadas.forEach(pieza => {
+        let m2Pieza Unica = 0;
         
-        // Actualizar detalle para el cliente
-        document.getElementById('detalleCliente').innerHTML = `
-            <strong>Detalle:</strong> ${unidades} pieza(s) de ${lC}x${aC} cm.
-        `;
-    }
+        if (pieza.tipo === 'triángulo') {
+            // Fórmula triángulo: (Base * Altura) / 2. Pasado a m2 (/10000)
+            // Se multiplica por 1.15 para agregar el 15% de recargo por desperdicio técnico
+            m2PiezaUnica = ((pieza.medidaA * pieza.medidaB) / 2) / 10000;
+            m2PiezaUnica = m2PiezaUnica * 1.15; 
+        } else {
+            // Rectángulo común: Largo * Ancho
+            m2PiezaUnica = (pieza.medidaA * pieza.medidaB) / 10000;
+        }
+
+        costoMaterialAcumulado += (precioPorM2 * m2PiezaUnica) * pieza.cantidad;
+    });
+
+    const costoTotalCortes = pTirada * cTiradas;
+    
+    // Venta final con el multiplicador aplicado y redondeo por decena
+    let ventaFinal = (costoMaterialAcumulado + costoTotalCortes) * multi;
+    ventaFinal = redondearDecena(ventaFinal);
+
+    // Escribir resultados finales en pantalla
+    document.getElementById('soloMaterial').innerText = "$" + Math.round(costoMaterialAcumulado).toLocaleString('es-AR');
+    document.getElementById('soloCortes').innerText = "$" + Math.round(costoTotalCortes).toLocaleString('es-AR');
+    document.getElementById('precioVenta').innerText = "$" + ventaFinal.toLocaleString('es-AR');
 }
 
 function enviarWhatsApp() {
+    if (piezasCargadas.length === 0) {
+        alert("Carga al menos una pieza antes de enviar.");
+        return;
+    }
+
     const total = document.getElementById('precioVenta').innerText;
-    const lC = document.getElementById('largoC').value;
-    const aC = document.getElementById('anchoC').value;
-    const cant = document.getElementById('unidades').value;
+    
+    let lineasDespiece = '';
+    piezasCargadas.forEach(pieza => {
+        if (pieza.tipo === 'triángulo') {
+            lineasDespiece += `• ${pieza.cantidad} triángulo(s) de ${pieza.medidaA}x${pieza.medidaB} cm\n`;
+        } else {
+            lineasDespiece += `• ${pieza.cantidad} pieza(s) de ${pieza.medidaA}x${pieza.medidaB} cm\n`;
+        }
+    });
     
     const mensaje = encodeURIComponent(
-        `*Presupuesto de Carpintería*\n\n` +
-        `*Detalle:* ${cant} pieza(s) de ${lC}x${aC} cm\n` +
-        `*Total:* ${total}\n\n` +
-        `_Precios sujetos a cambios sin previo aviso._`
+        `*Presupuesto de Carpintería - ALMA PLENA*\n\n` +
+        `*Detalle del pedido:*\n${lineasDespiece}\n` +
+        `*Total Presupuesto:* ${total}\n\n` +
+        `_Precios de materiales sujetos a variaciones._`
     );
     
     window.open(`https://wa.me/?text=${mensaje}`, '_blank');
