@@ -81,7 +81,7 @@
     <div class="no-print" style="background: #fdfaf4; padding: 12px; border-radius: 8px; border: 1px dashed #f39c12; margin-top: 10px;">
         <div class="flex-row">
             <div style="flex:1.5">
-                <label id="labelMedidas">Medidas Rectángulo (cm):</label>
+                <label id="labelMedidas">Medidas de la pieza (cm):</label>
                 <div class="flex-row">
                     <input type="number" id="medidaA" placeholder="Largo / Base">
                     <input type="number" id="medidaB" placeholder="Ancho / Altura">
@@ -101,7 +101,6 @@
 
     <div class="section-title">Listado de Piezas Cargadas</div>
     <div class="lista-piezas" id="listaPiezasContenedor">
-        <!-- Acá se van mostrando las piezas dinámicamente -->
         <div style="color:#888; text-align:center; padding: 10px; font-size: 0.9em;">No hay piezas cargadas aún.</div>
     </div>
 
@@ -149,7 +148,6 @@
 </div>
 
 <script>
-// Matriz global para ir acumulando las piezas en memoria
 let piezasCargadas = [];
 
 function redondearDecena(numero) {
@@ -166,7 +164,6 @@ function agregarPieza(tipo) {
         return;
     }
 
-    // Guardar objeto pieza en el listado
     piezasCargadas.push({
         tipo: tipo,
         medidaA: medA,
@@ -174,7 +171,6 @@ function agregarPieza(tipo) {
         cantidad: cant
     });
 
-    // Limpiar campos de medida para la próxima carga
     document.getElementById('medidaA').value = '';
     document.getElementById('medidaB').value = '';
     document.getElementById('cantPieza').value = '1';
@@ -199,7 +195,6 @@ function actualizarInterfazYCalcular() {
         return;
     }
 
-    // Renderizar la lista visual de piezas
     contenedor.innerHTML = '';
     let detalleTextoHTML = '<strong>Detalle del despiece:</strong><br>';
     
@@ -240,17 +235,13 @@ function calcularTodo() {
     
     let costoMaterialAcumulado = 0;
 
-    // Calcular los m2 de cada pieza cargada según su tipo
     piezasCargadas.forEach(pieza => {
-        let m2Pieza Unica = 0;
+        let m2PiezaUnica = 0;
         
         if (pieza.tipo === 'triángulo') {
-            // Fórmula triángulo: (Base * Altura) / 2. Pasado a m2 (/10000)
-            // Se multiplica por 1.15 para agregar el 15% de recargo por desperdicio técnico
             m2PiezaUnica = ((pieza.medidaA * pieza.medidaB) / 2) / 10000;
             m2PiezaUnica = m2PiezaUnica * 1.15; 
         } else {
-            // Rectángulo común: Largo * Ancho
             m2PiezaUnica = (pieza.medidaA * pieza.medidaB) / 10000;
         }
 
@@ -258,12 +249,9 @@ function calcularTodo() {
     });
 
     const costoTotalCortes = pTirada * cTiradas;
-    
-    // Venta final con el multiplicador aplicado y redondeo por decena
     let ventaFinal = (costoMaterialAcumulado + costoTotalCortes) * multi;
     ventaFinal = redondearDecena(ventaFinal);
 
-    // Escribir resultados finales en pantalla
     document.getElementById('soloMaterial').innerText = "$" + Math.round(costoMaterialAcumulado).toLocaleString('es-AR');
     document.getElementById('soloCortes').innerText = "$" + Math.round(costoTotalCortes).toLocaleString('es-AR');
     document.getElementById('precioVenta').innerText = "$" + ventaFinal.toLocaleString('es-AR');
