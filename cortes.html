@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Cortes Múltiples - ALMA PLENA</title>
+    <title>Calculadora de Cortes Múltiples - Artesanías LA VILLA</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f0f2f5; margin: 0; }
         .card { background: white; padding: 25px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
@@ -63,7 +63,7 @@
 <div class="card">
     <div class="print-header">
         <h2 style="border:none; margin-bottom:0;">Presupuesto de Corte</h2>
-        <p style="margin-top:5px; font-weight:bold; color:#555;">ALMA PLENA - Carpintería Artesanal</p>
+        <p style="margin-top:5px; font-weight:bold; color:#555;">Artesanías LA VILLA</p>
     </div>
 
     <h2 class="no-print">Presupuesto de Taller</h2>
@@ -233,7 +233,7 @@ function actualizarInterfazYCalcular() {
             </div>
         `;
 
-        detalleTextoHTML += `• ${textoMedida}.<br>`;
+        detalleTextoHTML += `• ${textoMedida}.<br>';
     });
 
     document.getElementById('detalleCliente').innerHTML = detalleTextoHTML;
@@ -250,7 +250,6 @@ function calcularTodo() {
 
     if (lP <= 0 || aP <= 0) return;
 
-    // Calcular y mostrar M2 de la placa entera
     const m2Placa = (lP * aP) / 10000;
     document.getElementById('m2PlacaVisual').innerText = m2Placa.toFixed(2) + " m²";
 
@@ -259,13 +258,11 @@ function calcularTodo() {
     let costoMaterialAcumulado = 0;
     let m2CortesTotales = 0;
 
-    // Sumar metros y costos de las piezas
     piezasCargadas.forEach(pieza => {
         let m2PiezaUnica = 0;
         
         if (pieza.tipo === 'triángulo') {
             m2PiezaUnica = ((pieza.medidaA * pieza.medidaB) / 2) / 10000;
-            // Para el costo usamos el recargo por desperdicio (1.15), pero para los m2 reales medidos sumamos el neto
             m2CortesTotales += m2PiezaUnica * pieza.cantidad;
             m2PiezaUnica = m2PiezaUnica * 1.15; 
         } else {
@@ -276,11 +273,9 @@ function calcularTodo() {
         costoMaterialAcumulado += (precioPorM2 * m2PiezaUnica) * pieza.cantidad;
     });
 
-    // Mostrar M2 totales de cortes
     const elementoM2Cortes = document.getElementById('m2CortesVisual');
     elementoM2Cortes.innerText = m2CortesTotales.toFixed(2) + " m²";
 
-    // Validar si nos pasamos del límite físico de la placa
     if (m2CortesTotales > m2Placa) {
         elementoM2Cortes.className = "alerta-exceso";
         document.getElementById('cartelAlerta').style.display = "block";
@@ -316,7 +311,7 @@ function enviarWhatsApp() {
     });
     
     const mensaje = encodeURIComponent(
-        `*Presupuesto de Carpintería - ALMA PLENA*\n\n` +
+        `*Presupuesto de Artesanías - LA VILLA*\n\n` +
         `*Detalle del pedido:*\n${lineasDespiece}\n` +
         `*Total Presupuesto:* ${total}\n\n` +
         `_Precios de materiales sujetos a variaciones._`
